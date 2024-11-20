@@ -1,31 +1,44 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
-// Configuration de la connexion PostgreSQL
-const sequelize = new Sequelize({
-  dialect: "postgres",
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  dialectOptions: {
-    ssl:
-      process.env.NODE_ENV === "production"
-        ? {
-            require: true,
-            rejectUnauthorized: false,
-          }
-        : false,
-  },
-  logging: process.env.NODE_ENV === "development" ? console.log : false,
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
-  },
-});
+let sequelize;
+
+if (process.env.NODE_ENV === "production") {
+  // En production, utilise l'URL de la base de données fournie par Railway
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: "postgres",
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+    logging: false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+  });
+} else {
+  // En développement, utilise les variables d'environnement locales
+  sequelize = new Sequelize({
+    dialect: "postgres",
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    logging: console.log,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+  });
+}
 
 // Tester la connexion
 const testConnection = async () => {
